@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA, TruncatedSVD
+from sklearn.preprocessing import StandardScaler, RobustScaler 
 import matplotlib.patches as mpatches
 import time
 import os
@@ -33,8 +34,13 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-df = pd.read_csv('creditcard.csv')
+df = pd.read_csv('creditcard.csv')  
 
-print(df.columns[len(df.columns)-1])
-df.plot()
+print("There are", df["Class"].value_counts()[0]/len(df)*100,"% non-fradulent transactions")
+print("There are",df["Class"].value_counts()[1]/len(df)*100, "% fradulent transaction")
+
+colors = ["#0101DF", "#DF0101"]
+
+sns.countplot(x='Class', data=df, palette=colors)
+plt.title('Class Distributions \n (0: No Fraud || 1: Fraud)', fontsize=14)
 plt.show()
