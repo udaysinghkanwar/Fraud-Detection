@@ -18,11 +18,13 @@ from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
+
 import collections
 
 
 # Other Libraries
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
 from sklearn.pipeline import make_pipeline
 from imblearn.pipeline import make_pipeline as imbalanced_make_pipeline
 from imblearn.over_sampling import SMOTE
@@ -233,3 +235,70 @@ t0 = time.time()
 X_reduced_svd = TruncatedSVD(n_components=2, algorithm='randomized', random_state=42).fit_transform(X.values)
 t1 = time.time()
 print("Truncated SVD took {:.2} s".format(t1 - t0))
+
+
+f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24,6))
+# labels = ['No Fraud', 'Fraud']
+f.suptitle('Clusters using Dimensionality Reduction', fontsize=14)
+
+
+blue_patch = mpatches.Patch(color='#0A0AFF', label='No Fraud')
+red_patch = mpatches.Patch(color='#AF0000', label='Fraud')
+
+
+# t-SNE scatter plot
+ax1.scatter(X_reduced_tsne[:,0], X_reduced_tsne[:,1], c=(y == 0), cmap='coolwarm', label='No Fraud', linewidths=2)
+ax1.scatter(X_reduced_tsne[:,0], X_reduced_tsne[:,1], c=(y == 1), cmap='coolwarm', label='Fraud', linewidths=2)
+ax1.set_title('t-SNE', fontsize=14)
+
+ax1.grid(True)
+
+ax1.legend(handles=[blue_patch, red_patch])
+
+
+# PCA scatter plot
+ax2.scatter(X_reduced_pca[:,0], X_reduced_pca[:,1], c=(y == 0), cmap='coolwarm', label='No Fraud', linewidths=2)
+ax2.scatter(X_reduced_pca[:,0], X_reduced_pca[:,1], c=(y == 1), cmap='coolwarm', label='Fraud', linewidths=2)
+ax2.set_title('PCA', fontsize=14)
+
+ax2.grid(True)
+
+ax2.legend(handles=[blue_patch, red_patch])
+
+# TruncatedSVD scatter plot
+ax3.scatter(X_reduced_svd[:,0], X_reduced_svd[:,1], c=(y == 0), cmap='coolwarm', label='No Fraud', linewidths=2)
+ax3.scatter(X_reduced_svd[:,0], X_reduced_svd[:,1], c=(y == 1), cmap='coolwarm', label='Fraud', linewidths=2)
+ax3.set_title('Truncated SVD', fontsize=14)
+
+ax3.grid(True)
+
+ax3.legend(handles=[blue_patch, red_patch])
+
+plt.show()
+
+# Undersampling before cross validating (prone to overfit)
+X = new_df.drop('Class', axis=1)
+y = new_df['Class']
+
+
+#for undersamplin
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+
+# Turn the values into an array for feeding the classification algorithms.
+X_train = X_train.values
+X_test = X_test.values
+y_train = y_train.values
+y_test = y_test.values
+
+classifiers = {
+    "LogisiticRegression": LogisticRegression(),
+    "KNearest": KNeighborsClassifier(),
+    "Support Vector Classifier": SVC(),
+    "DecisionTreeClassifier": DecisionTreeClassifier()
+}
+
+for key, classifier in classifiers.items():
+    classifier.fit(X_train, y_train)
+    training_score = cross_val_score(classifier, X_train, y_train, cv=5)
+    print("Classifiers: ", classifier.__class__.__name__, "Has a training score of", round(training_score.mean(), 2) * 100, "% accuracy score")
